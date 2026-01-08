@@ -1,91 +1,106 @@
 body {
-    background-color: #222;
+    background-color: #333; /* 全体の背景 */
     color: white;
-    font-family: sans-serif;
+    font-family: 'Yu Gothic', 'Meiryo', sans-serif;
     margin: 0;
     display: flex;
     justify-content: center;
-    height: 100vh;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden; /* スクロールバーを非表示 */
 }
 
 .game-board {
-    width: 800px;
-    background-color: #35654d; /* プレイマット風の緑 */
-    border: 5px solid #1a3326;
+    width: 900px; /* ボードの幅を調整 */
+    height: 90vh; /* ボードの高さを調整 */
+    background-color: #4B0082; /* 紫の背景 */
+    border: 8px solid #2a004f; /* 濃い紫の枠 */
+    border-radius: 15px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     padding: 20px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    position: relative;
 }
 
 .player-area {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-}
-
-.field, .hand {
-    display: flex;
-    gap: 10px;
-    min-height: 120px;
-    padding: 10px;
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 8px;
     align-items: center;
-    justify-content: center;
+    gap: 15px;
 }
 
-/* カードのデザイン */
-.card {
-    width: 80px;
-    height: 110px;
-    background-color: #dcb35c; /* モンスターカード風の色 */
-    border: 2px solid #555;
-    border-radius: 5px;
-    color: black;
-    font-size: 10px;
+.enemy-area {
+    transform: rotate(180deg); /* 敵のエリアを上下反転 */
+    margin-bottom: 20px;
+}
+
+.player-main-area {
+    margin-top: 20px;
+}
+
+/* LP表示とメッセージ */
+.stats {
+    width: 100%;
     display: flex;
-    flex-direction: column;
     justify-content: space-between;
-    padding: 5px;
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: scale(1.1);
-    z-index: 10;
-}
-
-.card h3 {
-    margin: 0;
-    font-size: 11px;
-    text-align: center;
-}
-
-.card .stats {
-    font-weight: bold;
-    text-align: center;
-}
-
-.card.summoned {
-    background-color: #e6c87e;
-    box-shadow: 0 0 10px yellow;
-}
-
-.controls {
-    margin-top: 10px;
-}
-
-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.message-box {
-    margin-top: 5px;
-    color: #ffd700;
+    align-items: center;
+    padding: 0 20px;
+    font-size: 1.2em;
     font-weight: bold;
 }
+
+.top-stats {
+    transform: rotate(180deg); /* 敵のLPも反転 */
+    flex-direction: row-reverse; /* LPとメッセージの順序も反転 */
+}
+
+.lp-display {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.turn-message {
+    color: #ffd700; /* ゴールド色 */
+    font-size: 1.1em;
+}
+
+/* フィールドと手札 */
+.field {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* カードスロット間の間隔 */
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    min-height: 140px; /* カードが配置されていない時の高さ */
+    width: 90%; /* フィールドの幅 */
+    margin: 0 auto;
+}
+
+.hand {
+    display: flex;
+    justify-content: center;
+    gap: 5px; /* 手札のカード間の間隔 */
+    min-height: 140px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    width: 90%;
+    margin: 0 auto;
+}
+
+/* カードスロット */
+.card-slot {
+    width: 100px; /* カードとほぼ同じ幅 */
+    height: 140px; /* カードとほぼ同じ高さ */
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.5);
+    overflow: hidden; /*
