@@ -3,37 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易カードバトル</title>
+    <title>偉人カードバトル</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-board">
-        <div class="player-area" id="enemy-area">
-            <div class="stats">
-                <h2>Enemy LP: <span id="enemy-lp">4000</span></h2>
-                <div class="message-box" id="enemy-message">...</div>
+        <div class="player-area enemy-area">
+            <div class="stats top-stats">
+                <span id="enemy-turn-message" class="turn-message">Enemy Turn...</span>
+                <span class="lp-display">Enemy LP: <span id="enemy-lp">4000</span></span>
             </div>
-            <div class="field" id="enemy-field">
-                </div>
-        </div>
-
-        <hr>
-
-        <div class="player-area" id="player-area">
-            <div class="field" id="player-field">
-                </div>
-            <div class="hand" id="player-hand">
-                </div>
-            <div class="stats">
-                <h2>Player LP: <span id="player-lp">4000</span></h2>
-                <div class="controls">
-                    <button onclick="drawCard()">ドロー</button>
-                    <button onclick="endTurn()">ターン終了</button>
-                </div>
-                <div class="message-box" id="game-message">ゲーム開始！ドローしてください。</div>
+            <div class="field enemy-field" id="enemy-field">
+                <div class="card-slot enemy-slot" data-slot="0"></div>
+                <div class="card-slot enemy-slot" data-slot="1"></div>
+                <div class="card-slot enemy-slot" data-slot="2"></div>
+                <div class="card-slot enemy-slot" data-slot="3"></div>
+                <div class="card-slot enemy-slot" data-slot="4"></div>
+            </div>
+            <div class="hand enemy-hand" id="enemy-hand">
+                <div class="card-back deck">DECK</div>
             </div>
         </div>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+
+        <div class="separator"></div> <div class="player-area player-main-area">
+            <div class="hand player-hand" id="player-hand">
