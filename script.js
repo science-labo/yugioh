@@ -2,22 +2,55 @@
 let playerLP = 4000;
 let enemyLP = 4000;
 let playerHand = [];
-let playerField = [];
-let enemyField = [];
+let playerField = [null, null, null, null, null]; // 5スロット
+let enemyField = [null, null, null, null, null]; // 5スロット
+let playerDeck = [];
+let enemyDeck = [];
 let turn = 1; // 1: Player, 2: Enemy
+let selectedPlayerCardIndex = -1; // 選択中のプレイヤーフィールドカードのインデックス
+let summonedThisTurn = false; // 今ターン召喚したか
 
-// カードデータ（簡易版）
+// カードデータ（画像URLを追加）
 const cardDatabase = [
-    { name: "戦士", atk: 1200, def: 1000 },
-    { name: "ドラゴン", atk: 2000, def: 1500 },
-    { name: "魔法使い", atk: 1600, def: 800 },
-    { name: "スライム", atk: 500, def: 2000 },
-    { name: "騎士", atk: 1800, def: 1800 }
+    { id: 1, name: "ロバート・フック", atk: 1200, def: 1000, imageUrl: "images/robert_hooke.png", effect: "生命の観察者" },
+    { id: 2, name: "ニコラ・テスラ", atk: 2000, def: 1500, imageUrl: "images/nikola_tesla.png", effect: "電磁界の魔術師" },
+    { id: 3, name: "ドミトリ・メンデレーエフ", atk: 1600, def: 1800, imageUrl: "images/dmitri_mendeleev.png", effect: "元素の秩序" },
+    { id: 4, name: "チャールズ・ダーウィン", atk: 1500, def: 1200, imageUrl: "images/charles_darwin.png", effect: "進化論の提唱者" },
+    { id: 5, name: "トーマス・エジソン", atk: 1800, def: 1300, imageUrl: "images/thomas_edison.png", effect: "発明王" },
+    { id: 6, name: "アイザック・ニュートン", atk: 2200, def: 1600, imageUrl: "images/isaac_newton.png", effect: "万有引力の発見者" },
+    { id: 7, name: "アンドレ・アンペール", atk: 1700, def: 1100, imageUrl: "images/andre_ampere.png", effect: "電流の法則" },
+    { id: 8, name: "アメデオ・アボガドロ", atk: 1000, def: 2000, imageUrl: "images/amedeo_avogadro.png", effect: "分子論の基礎" },
+    { id: 9, name: "ジョン・ドルトン", atk: 1400, def: 1700, imageUrl: "images/john_dalton.png", effect: "原子論の父" },
+    { id: 10, name: "グレゴール・メンデル", atk: 1300, def: 1400, imageUrl: "images/gregor_mendel.png", effect: "遺伝学の祖" }
 ];
 
+// 初期デッキ構築（全てのカードを2枚ずつ）
+function initializeDecks() {
+    playerDeck = [];
+    enemyDeck = [];
+    for (let i = 0; i < 2; i++) {
+        cardDatabase.forEach(card => {
+            playerDeck.push({ ...card });
+            enemyDeck.push({ ...card });
+        });
+    }
+    // デッキをシャッフル
+    playerDeck = shuffleArray(playerDeck);
+    enemyDeck = shuffleArray(enemyDeck);
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 // ユーティリティ: メッセージ表示
-function log(msg) {
-    document.getElementById('game-message').innerText = msg;
+function log(msg, isEnemy = false) {
+    const targetElement = isEnemy ? document.getElementById('enemy-turn-message') : document.getElementById('game-message');
+    targetElement.innerText = msg;
 }
 
 // ユーティリティ: LP更新
@@ -35,174 +68,290 @@ function updateLP() {
 }
 
 // カード要素を作成する関数
-function createCardElement(cardData, isHand = true, index) {
+function createCardElement(cardData, isPlayer = true, fieldIndex = -1, isHand = false) {
     const div = document.createElement('div');
     div.className = 'card';
+    div.dataset.id = cardData.id;
+
+    // 画像とテキストを構造化
     div.innerHTML = `
-        <h3>${cardData.name}</h3>
-        <div class="stats">
-            ATK: ${cardData.atk}<br>
-            DEF: ${cardData.def}
-        </div>
+        <div class="card-name">${cardData.name}</div>
+        <img src="${cardData.imageUrl}" alt="${cardData.name}">
+        <div class="card-effect">${cardData.effect}</div>
+        <div class="card-stats">ATK: ${cardData.atk} / DEF: ${cardData.def}</div>
     `;
-    
-    // 手札にある場合、クリックで召喚
-    if (isHand) {
-        div.onclick = () => summonCard(index);
-    } 
-    // フィールドにある場合、クリックで攻撃（プレイヤー側のみ）
-    else if (turn === 1) {
-        div.classList.add('summoned');
-        div.onclick = () => attack(cardData, div);
+
+    if (isPlayer) {
+        if (isHand) {
+            // 手札のカード
+            div.onclick = () => selectCardInHand(cardData);
+            div.dataset.handIndex = playerHand.indexOf(cardData);
+        } else {
+            // フィールドのカード
+            div.dataset.fieldIndex = fieldIndex;
+            div.onclick = () => selectCardOnField(fieldIndex);
+            if (cardData.position === 'defense') {
+                div.classList.add('defense');
+            }
+        }
+    } else {
+        // 敵のフィールドカード（反転表示）
+        div.style.transform = 'rotate(180deg)';
+        if (cardData.position === 'defense') {
+             div.classList.add('defense');
+             div.style.transform = 'rotate(90deg) scaleX(-1)'; // 敵の守備は横向きで逆
+        }
     }
     return div;
 }
 
-// ドロー機能
+// 手札のカード選択
+let selectedCardInHand = null; // 手札から選択中のカード
+
+function selectCardInHand(cardData) {
+    if (turn !== 1) return;
+    
+    // 選択状態をリセット
+    document.querySelectorAll('.player-hand .card').forEach(cardEl => cardEl.classList.remove('selected'));
+    
+    if (selectedCardInHand === cardData) {
+        selectedCardInHand = null;
+        document.getElementById('summon-button').disabled = true;
+        document.getElementById('set-def-button').disabled = true;
+        log("カード選択解除");
+    } else {
+        selectedCardInHand = cardData;
+        document.querySelector(`.player-hand .card[data-id="${cardData.id}"][data-hand-index="${playerHand.indexOf(cardData)}"]`).classList.add('selected');
+        document.getElementById('summon-button').disabled = false;
+        document.getElementById('set-def-button').disabled = false; // 守備表示でのセットも可能にする
+        log(`${cardData.name} を選択中。`);
+    }
+    selectedPlayerCardIndex = -1; // フィールドの選択を解除
+    renderField(); // フィールドの選択状態もリセットするため
+}
+
+
+// フィールドのカード選択（攻撃用）
+function selectCardOnField(index) {
+    if (turn !== 1 || !playerField[index] || !playerField[index].canAttack) return;
+    
+    document.querySelectorAll('.player-field .card').forEach(cardEl => cardEl.classList.remove('selected'));
+    
+    if (selectedPlayerCardIndex === index) {
+        selectedPlayerCardIndex = -1;
+        log("カード選択解除");
+    } else {
+        selectedPlayerCardIndex = index;
+        document.querySelector(`.player-field .card[data-field-index="${index}"]`).classList.add('selected');
+        log(`${playerField[index].name} を選択中。攻撃対象を選択してください。`);
+    }
+    selectedCardInHand = null; // 手札の選択を解除
+    updateControlButtons();
+}
+
+
+// カードを引く (ドロー)
 function drawCard() {
     if (turn !== 1) return;
-    if (playerHand.length >= 5) {
+    if (playerHand.length >= 5) { // 手札の上限
         log("手札がいっぱいです！");
         return;
     }
-    
-    // ランダムにカードを取得
-    const randomCard = cardDatabase[Math.floor(Math.random() * cardDatabase.length)];
-    playerHand.push(randomCard);
+    if (playerDeck.length === 0) {
+        log("デッキがありません！");
+        return;
+    }
+
+    const card = playerDeck.shift();
+    playerHand.push(card);
     renderHand();
     log("カードをドローしました。");
+    updateControlButtons();
 }
 
 // 手札の描画
 function renderHand() {
     const handDiv = document.getElementById('player-hand');
+    // デッキ表示を維持するために、既存のデッキ要素以外をクリア
+    const deckBack = handDiv.querySelector('.deck');
     handDiv.innerHTML = '';
+    handDiv.appendChild(deckBack);
+
     playerHand.forEach((card, index) => {
-        handDiv.appendChild(createCardElement(card, true, index));
+        const cardEl = createCardElement(card, true, -1, true);
+        handDiv.appendChild(cardEl);
     });
-}
-
-// 召喚機能
-function summonCard(index) {
-    if (playerField.length >= 3) {
-        log("フィールドがいっぱいです！");
-        return;
-    }
-
-    const card = playerHand[index];
-    playerHand.splice(index, 1); // 手札から削除
-    playerField.push({ ...card, canAttack: true }); // フィールドに追加
-    
-    renderHand();
-    renderField();
-    log(`${card.name} を召喚しました！`);
 }
 
 // フィールドの描画
 function renderField() {
     const pFieldDiv = document.getElementById('player-field');
-    pFieldDiv.innerHTML = '';
-    playerField.forEach(card => {
-        pFieldDiv.appendChild(createCardElement(card, false));
+    const eFieldDiv = document.getElementById('enemy-field');
+
+    // プレイヤーフィールド
+    playerField.forEach((card, index) => {
+        const slot = pFieldDiv.querySelector(`.card-slot[data-slot="${index}"]`);
+        slot.innerHTML = ''; // スロットをクリア
+        if (card) {
+            const cardEl = createCardElement(card, true, index, false);
+            if (index === selectedPlayerCardIndex) {
+                cardEl.classList.add('selected');
+            }
+            if (card.canAttack && turn === 1) { // 攻撃可能なカードに光を
+                cardEl.classList.add('can-attack');
+            }
+            slot.appendChild(cardEl);
+        }
     });
 
-    const eFieldDiv = document.getElementById('enemy-field');
-    eFieldDiv.innerHTML = '';
-    enemyField.forEach(card => {
-        const div = createCardElement(card, false);
-        div.onclick = null; // 敵のカードはクリックできない
-        eFieldDiv.appendChild(div);
+    // 敵フィールド
+    enemyField.forEach((card, index) => {
+        const slot = eFieldDiv.querySelector(`.card-slot[data-slot="${index}"]`);
+        slot.innerHTML = '';
+        if (card) {
+            const cardEl = createCardElement(card, false, index, false);
+            // 敵のカードはクリックで攻撃対象になる（プレイヤーのカードが選択されている場合）
+            if (selectedPlayerCardIndex !== -1 && turn === 1) {
+                 cardEl.onclick = () => confirmAttack(selectedPlayerCardIndex, index);
+                 cardEl.classList.add('can-be-target'); // ターゲット可能な光など
+            }
+            slot.appendChild(cardEl);
+        }
     });
+    updateControlButtons();
 }
 
-// 攻撃機能（シンプル化：直接攻撃か、先頭のモンスターを攻撃）
-function attack(attacker, element) {
-    if (!attacker.canAttack) {
-        log("このモンスターはすでに攻撃しました。");
+// コントロールボタンの状態更新
+function updateControlButtons() {
+    document.getElementById('draw-button').disabled = turn !== 1 || playerHand.length >= 5;
+    document.getElementById('summon-button').disabled = turn !== 1 || !selectedCardInHand || summonedThisTurn || playerField.every(s => s !== null);
+    document.getElementById('set-def-button').disabled = turn !== 1 || !selectedCardInHand || summonedThisTurn || playerField.every(s => s !== null);
+    document.getElementById('end-turn-button').disabled = turn !== 1;
+}
+
+// 召喚処理
+function trySummonSelectedCard() {
+    if (turn !== 1 || !selectedCardInHand || summonedThisTurn) return;
+
+    const emptySlotIndex = playerField.findIndex(slot => slot === null);
+    if (emptySlotIndex === -1) {
+        log("フィールドがいっぱいです！");
+        return;
+    }
+    
+    // 手札からカードを削除
+    const handIndex = playerHand.indexOf(selectedCardInHand);
+    playerHand.splice(handIndex, 1);
+    
+    // フィールドにカードを配置（攻撃表示で）
+    playerField[emptySlotIndex] = { ...selectedCardInHand, position: 'attack', canAttack: false }; // 召喚ターンは攻撃不可
+    
+    log(`${selectedCardInHand.name} を攻撃表示で召喚しました！`);
+    selectedCardInHand = null; // 選択解除
+    summonedThisTurn = true;
+    renderHand();
+    renderField();
+}
+
+// 守備表示でセット
+function setDefensePosition() {
+    if (turn !== 1 || !selectedCardInHand || summonedThisTurn) return;
+
+    const emptySlotIndex = playerField.findIndex(slot => slot === null);
+    if (emptySlotIndex === -1) {
+        log("フィールドがいっぱいです！");
         return;
     }
 
-    // 敵フィールドにモンスターがいない場合：ダイレクトアタック
-    if (enemyField.length === 0) {
-        enemyLP -= attacker.atk;
-        log(`${attacker.name} のダイレクトアタック！ ${attacker.atk} ダメージ！`);
-        // アニメーション用クラス
-        element.style.transform = "translateY(-50px)";
-        setTimeout(() => element.style.transform = "none", 300);
+    const cardToSet = { ...selectedCardInHand, position: 'defense', canAttack: false }; // 守備表示は攻撃不可
+    const handIndex = playerHand.indexOf(selectedCardInHand);
+    playerHand.splice(handIndex, 1);
+    playerField[emptySlotIndex] = cardToSet;
+
+    log(`${cardToSet.name} を守備表示でセットしました！`);
+    selectedCardInHand = null; // 選択解除
+    summonedThisTurn = true;
+    renderHand();
+    renderField();
+}
+
+
+// 攻撃実行の確認（プレイヤー側）
+function confirmAttack(attackerIndex, targetIndex) {
+    const attacker = playerField[attackerIndex];
+    const target = enemyField[targetIndex];
+
+    if (!attacker || !attacker.canAttack) {
+        log("このモンスターは攻撃できません。");
+        return;
+    }
+    if (!target) {
+        log("攻撃対象が選択されていません。");
+        return;
+    }
+
+    log(`${attacker.name} が ${target.name} に攻撃！`);
+    
+    // 攻撃アニメーション（仮）
+    const attackerEl = document.querySelector(`.player-field .card[data-field-index="${attackerIndex}"]`);
+    const targetEl = document.querySelector(`.enemy-field .card[data-slot="${targetIndex}"] .card`);
+    if (attackerEl && targetEl) {
+        const attackerRect = attackerEl.getBoundingClientRect();
+        const targetRect = targetEl.getBoundingClientRect();
+
+        const deltaX = targetRect.left - attackerRect.left;
+        const deltaY = targetRect.top - attackerRect.top;
+
+        attackerEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        setTimeout(() => {
+            attackerEl.style.transform = ''; // 元に戻す
+            resolveBattle(attackerIndex, targetIndex);
+        }, 500);
     } else {
-        // 敵がいる場合：一番左の敵を攻撃（簡易ルール）
-        const target = enemyField[0];
-        log(`${attacker.name} が ${target.name} に攻撃！`);
-        
+        resolveBattle(attackerIndex, targetIndex);
+    }
+}
+
+// 戦闘解決ロジック
+function resolveBattle(attackerIndex, targetIndex) {
+    const attacker = playerField[attackerIndex];
+    const target = enemyField[targetIndex];
+
+    if (!attacker || !target) return;
+
+    let damageToPlayerLP = 0;
+    let damageToEnemyLP = 0;
+    let attackerDestroyed = false;
+    let targetDestroyed = false;
+
+    if (target.position === 'attack') {
+        // 攻撃表示の敵モンスターへの攻撃
         if (attacker.atk > target.atk) {
-            const damage = attacker.atk - target.atk;
-            enemyLP -= damage;
-            enemyField.shift(); // 敵を破壊
-            log(`敵を破壊！ ${damage} ダメージ！`);
-        } else if (attacker.atk === target.atk) {
-            enemyField.shift(); // 両方破壊
-            playerField = playerField.filter(c => c !== attacker);
-            log("相打ちです！");
-        } else {
-            const damage = target.atk - attacker.atk;
-            playerLP -= damage;
-            playerField = playerField.filter(c => c !== attacker); // 自分が破壊
-            log(`返り討ちにあいました... ${damage} ダメージ！`);
+            damageToEnemyLP = attacker.atk - target.atk;
+            targetDestroyed = true;
+            log(`${attacker.name} が ${target.name} を破壊！相手に ${damageToEnemyLP} ダメージ！`);
+        } else if (attacker.atk < target.atk) {
+            damageToPlayerLP = target.atk - attacker.atk;
+            attackerDestroyed = true;
+            log(`${target.name} の反撃！ ${attacker.name} は破壊され、あなたに ${damageToPlayerLP} ダメージ！`);
+        } else { // 攻撃力同じ
+            attackerDestroyed = true;
+            targetDestroyed = true;
+            log(`${attacker.name} と ${target.name} は相打ち！`);
+        }
+    } else { // target.position === 'defense'
+        // 守備表示の敵モンスターへの攻撃
+        if (attacker.atk > target.def) {
+            targetDestroyed = true;
+            log(`${attacker.name} が ${target.name} (守備表示) を破壊！`);
+        } else if (attacker.atk < target.def) {
+            damageToPlayerLP = target.def - attacker.atk;
+            log(`${target.name} (守備表示) が堅い！あなたに ${damageToPlayerLP} ダメージ！`);
+        } else { // 攻撃力と守備力が同じ
+            log(`${target.name} (守備表示) は耐えきった！`);
         }
     }
-    
-    attacker.canAttack = false;
-    updateLP();
-    renderField();
-}
 
-// ターン終了
-function endTurn() {
-    turn = 2; // 敵のターン
-    document.getElementById('enemy-message').innerText = "敵のターン...";
-    
-    // 1秒後に敵が行動
-    setTimeout(enemyTurn, 1000);
-}
-
-// 敵のAI（簡易版）
-function enemyTurn() {
-    // 1. 召喚（50%の確率）
-    if (enemyField.length < 3) {
-        const randomCard = cardDatabase[Math.floor(Math.random() * cardDatabase.length)];
-        enemyField.push(randomCard);
-        renderField();
-    }
-
-    // 2. 攻撃
-    enemyField.forEach(enemy => {
-        // プレイヤーにモンスターがいない場合
-        if (playerField.length === 0) {
-            playerLP -= enemy.atk;
-            log(`敵の ${enemy.name} のダイレクトアタック！`);
-        } else {
-            // プレイヤーの先頭モンスターを攻撃
-            const target = playerField[0];
-            if (enemy.atk > target.atk) {
-                const damage = enemy.atk - target.atk;
-                playerLP -= damage;
-                playerField.shift();
-                log(`敵が ${target.name} を破壊！`);
-            }
-        }
-    });
-
-    updateLP();
-    renderField();
-
-    // ターンをプレイヤーに戻す
-    turn = 1;
-    // 全モンスターの攻撃権を復活
-    playerField.forEach(c => c.canAttack = true);
-    document.getElementById('game-message').innerText = "あなたのターンです。";
-}
-
-// 初期化
-drawCard();
-drawCard();
-drawCard();
+    if (targetDestroyed) {
+        enemyField[targetIndex] = null;
+        // 破壊アニメ
