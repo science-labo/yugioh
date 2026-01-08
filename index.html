@@ -2,53 +2,30 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>偉人カードバトル</title>
+    <title>理科の偉人カードバトル</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-board">
-        <div class="player-area enemy-area">
-            <div class="stats top-stats">
-                <span id="enemy-turn-message" class="turn-message">Enemy Turn...</span>
-                <span class="lp-display">Enemy LP: <span id="enemy-lp">4000</span></span>
-            </div>
-            <div class="field enemy-field" id="enemy-field">
-                <div class="card-slot enemy-slot" data-slot="0"></div>
-                <div class="card-slot enemy-slot" data-slot="1"></div>
-                <div class="card-slot enemy-slot" data-slot="2"></div>
-                <div class="card-slot enemy-slot" data-slot="3"></div>
-                <div class="card-slot enemy-slot" data-slot="4"></div>
-            </div>
-            <div class="hand enemy-hand" id="enemy-hand">
-                <div class="card-back deck">DECK</div>
-            </div>
+    <div class="game-container">
+        <div class="area enemy-area">
+            <div class="stats">Enemy LP: <span id="enemy-lp">4000</span></div>
+            <div class="field" id="enemy-field"></div>
         </div>
 
-        <div class="separator"></div> <div class="player-area player-main-area">
-            <div class="hand player-hand" id="player-hand">
-                <div class="card-back deck">DECK</div>
-            </div>
-            <div class="field player-field" id="player-field">
-                <div class="card-slot player-slot" data-slot="0"></div>
-                <div class="card-slot player-slot" data-slot="1"></div>
-                <div class="card-slot player-slot" data-slot="2"></div>
-                <div class="card-slot player-slot" data-slot="3"></div>
-                <div class="card-slot player-slot" data-slot="4"></div>
-            </div>
-            <div class="stats bottom-stats">
-                <span class="lp-display">Player LP: <span id="player-lp">4000</span></span>
+        <div class="message-board" id="msg">ドローして召喚してください</div>
+
+        <div class="area player-area">
+            <div class="field" id="player-field"></div>
+            <div class="hand" id="player-hand"></div>
+            <div class="stats">
+                Player LP: <span id="player-lp">4000</span>
                 <div class="controls">
-                    <button id="draw-button" onclick="drawCard()">ドロー</button>
-                    <button id="summon-button" onclick="trySummonSelectedCard()" disabled>召喚</button>
-                    <button id="set-def-button" onclick="setDefensePosition()" disabled>守備表示</button>
-                    <button id="end-turn-button" onclick="endTurn()">ターン終了</button>
+                    <button onclick="draw()">ドロー</button>
+                    <button onclick="endTurn()">ターン終了</button>
                 </div>
-                <span id="game-message" class="turn-message">ゲーム開始！ドローしてください。</span>
             </div>
         </div>
     </div>
     <script src="script.js"></script>
 </body>
 </html>
-               
