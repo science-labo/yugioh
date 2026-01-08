@@ -103,4 +103,187 @@ body {
     align-items: center;
     font-size: 0.8em;
     color: rgba(255, 255, 255, 0.5);
-    overflow: hidden; /*
+    overflow: hidden; /* カード画像がはみ出さないように */
+    position: relative; /* カードを配置するために必要 */
+}
+
+/* カードの基本スタイル */
+.card {
+    width: 96px; /* スロットより少し小さく */
+    height: 136px;
+    background-color: #dcb35c; /* モンスターカード風の色 */
+    border: 2px solid #555;
+    border-radius: 8px;
+    color: black;
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: absolute; /* スロット内に配置 */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); /* 中央配置 */
+    box-sizing: border-box; /* paddingとborderをwidth/heightに含める */
+    background-size: cover; /* 背景画像がカード全体を覆うように */
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.card img {
+    width: 100%;
+    height: 65%; /* 画像エリアの高さ */
+    object-fit: cover;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 2px;
+}
+
+.card .card-name {
+    font-size: 0.9em;
+    font-weight: bold;
+    text-align: center;
+    background-color: rgba(0,0,0,0.6);
+    color: white;
+    padding: 2px 0;
+    margin: -3px; /* はみ出し部分を修正 */
+    border-radius: 4px 4px 0 0;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    z-index: 1;
+}
+
+.card .card-effect {
+    font-size: 0.7em;
+    padding: 2px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 3px;
+    height: 25px; /* 効果テキストエリアの高さ */
+    overflow: hidden;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card .card-stats {
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+    font-size: 0.8em;
+    background-color: #333;
+    color: white;
+    padding: 2px 0;
+    border-radius: 0 0 4px 4px;
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    right: 3px;
+    z-index: 1;
+}
+
+/* 手札のカード */
+.hand .card {
+    position: relative; /* 手札では静的配置 */
+    transform: none;
+    left: auto;
+    top: auto;
+    margin: 0;
+}
+
+/* カードの状態スタイル */
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.7);
+    z-index: 10;
+}
+
+.card.selected {
+    border: 3px solid #00f; /* 選択中のカードは青い枠 */
+    box-shadow: 0 0 20px rgba(0, 0, 255, 0.8);
+    transform: scale(1.08);
+}
+
+.card.can-attack {
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.7); /* 攻撃可能なカードは緑の光 */
+}
+
+/* 守備表示 */
+.card.defense {
+    transform: translate(-50%, -50%) rotate(90deg); /* 中央配置後に90度回転 */
+}
+
+.card.defense .card-name,
+.card.defense .card-stats {
+    transform: rotate(-90deg); /* テキストも回転して読めるように */
+    transform-origin: center;
+}
+
+.card.destroyed {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.8) rotate(15deg);
+    border-color: red;
+    box-shadow: 0 0 10px red;
+}
+
+/* デッキの裏面 */
+.card-back {
+    width: 100px;
+    height: 140px;
+    background-color: #8B008B; /* 濃い紫 */
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: white;
+    font-size: 1.2em;
+}
+
+.deck {
+    cursor: default;
+}
+
+/* コントロールボタン */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+button {
+    padding: 10px 18px;
+    font-size: 1em;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #6a1b9a; /* ボタンの色 */
+    color: white;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #8e24aa;
+    transform: translateY(-2px);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.separator {
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 15px 0;
+}
