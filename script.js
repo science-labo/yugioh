@@ -355,3 +355,7 @@ function resolveBattle(attackerIndex, targetIndex) {
     if (targetDestroyed) {
         enemyField[targetIndex] = null;
         // 破壊アニメ
+
+    if (targetDestroyed) {
+        enemyField[targetIndex] = null;
+        // 破壊アニメ
